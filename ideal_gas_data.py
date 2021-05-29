@@ -93,6 +93,7 @@ history = model.fit(normed_train_data, train_labels.values, epochs=150, validati
 plot_hist(history)
 
 test_predictions = model.predict(normed_test_data).flatten()
+print(test_predictions)
 pred = pd.DataFrame(test_labels)
 pred['predictions'] = test_predictions
 print(pred.head())
