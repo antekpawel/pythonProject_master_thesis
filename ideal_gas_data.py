@@ -89,7 +89,7 @@ normed_test_data = normed_test_data.values
 normed_train_data = normed_train_data.values
 
 model = build_model()
-history = model.fit(normed_train_data, train_labels.values, epochs=10, validation_split=0.2, verbose=1, batch_size=32)
+history = model.fit(normed_train_data, train_labels.values, epochs=150, validation_split=0.2, verbose=1, batch_size=32)
 plot_hist(history)
 
 test_predictions = model.predict(normed_test_data).flatten()
@@ -97,9 +97,8 @@ pred = pd.DataFrame(test_labels)
 pred['predictions'] = test_predictions
 print(pred.head())
 
-print(test_predictions)
 test_labels = pd.DataFrame(test_labels)
-test_labels = test_labels.reset_index().drop('index', 1)
-print(test_labels)
-
-
+data_compare = test_labels.reset_index().drop('index', 1)
+data_compare['Predicted density [kg/m3]'] = test_predictions
+print(data_compare)
+data_compare.to_excel('Data_compare.xlsx')
