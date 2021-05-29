@@ -1,120 +1,76 @@
-from numpy import loadtxt
-from keras.models import Sequential
-from keras.layers import Dense
-import seaborn as sns
-
-import tensorflow as tf
-import warnings
-warnings.filterwarnings('ignore')
-##
-import pandas as pd
-import numpy as np
-import math
+import numpy as np# create dummy data for training
 import matplotlib.pyplot as plt
-from pprint import pprint
-##
-from sklearn import preprocessing
-from sklearn.decomposition import PCA
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import RandomizedSearchCV
+import torch
+from torch.autograd import Variable
 
+pressure = np.random.rand(100) * 9.9 + 0.1
+temperature = np.random.rand(100) * 200 + 273.15
+density = pressure * 1e6 / temperature / 8.314 * 1 / 1000
 
+x_train = np.concatenate(pressure.astype(np.float32), temperature.astype(np.float32), axis=0)
+#x_train = x_train.reshape(-1, 1)
+print(x_train)
 
-def get_important_features(transformed_features, components_, columns):
-    """
-    This function will return the most "important"
-    features so we can determine which have the most
-    effect on multi-dimensional scaling
-    """
-    num_columns = len(columns)
+y_train = density.astype(np.float32)
+y_train = y_train.reshape(-1, 1)
 
-    # Scale the principal components by the max value in
-    # the transformed set belonging to that component
-    xvector = components_[0] * max(transformed_features[:,0])
-    yvector = components_[1] * max(transformed_features[:,1])
+class linearRegression(torch.nn.Module):
+    def __init__(self, inputSize, outputSize):
+        super(linearRegression, self).__init__()
+        self.linear = torch.nn.Linear(inputSize, outputSize)
 
-    # Sort each column by it's length. These are your *original*
-    # columns, not the principal components.
-    important_features = { columns[i] : math.sqrt(xvector[i]**2 + yvector[i]**2) for i in range(num_columns) }
-    important_features = sorted(zip(important_features.values(), important_features.keys()), reverse=True)
-    return important_features
+    def forward(self, x):
+        out = self.linear(x)
+        return out
 
-np.set_printoptions(precision=12, suppress=True, linewidth=150)
-pd.options.display.float_format = '{:.6f}'.format
-sns.set()
-tf.__version__
+inputDim = 2        # takes variable 'x'
+outputDim = 1       # takes variable 'y'
+learningRate = 0.01
+epochs = 100
 
-databank = pd.read_csv('data.csv',low_memory=False, index_col=0)
-databank.columns = databank.columns.str.lower()
-databank.columns = databank.columns.str.rsplit('(', n=1).str.get(0)
-databank.columns = databank.columns.str.replace(" ", "_")
-databank.columns = databank.columns.str.replace("\\.", "")
-databank.columns = databank.columns.str.replace("-", "_")
-databank.columns = databank.columns.str.rstrip('_')
-##
-databank = databank.drop(['phase'], axis=1)
-databank['viscosity'] = pd.to_numeric(databank['viscosity'],errors = 'coerce')
-databank['therm_cond'] = pd.to_numeric(databank['therm_cond'],errors = 'coerce')
+model = linearRegression(inputDim, outputDim)
+##### For GPU #######
+if torch.cuda.is_available():
+    model.cuda()
 
-databank.isnull().sum().sum()
+criterion = torch.nn.MSELoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=learningRate)
 
-databank = databank.dropna()
-databank.info()
-databank.head()
+for epoch in range(epochs):
+    # Converting inputs and labels to Variable
+    if torch.cuda.is_available():
+        inputs = Variable(torch.from_numpy(x_train).cuda())
+        labels = Variable(torch.from_numpy(y_train).cuda())
+    else:
+        inputs = Variable(torch.from_numpy(x_train))
+        labels = Variable(torch.from_numpy(y_train))
 
-X = databank.drop(labels='fluid', axis=1)
+    # Clear gradient buffers because we don't want any gradient from previous epoch to carry forward, dont want to cummulate gradients
+    optimizer.zero_grad()
 
-corr = X.corr()
-corr
+    # get output from the model, given the inputs
+    outputs = model(inputs)
 
-features_corr = ~(corr.mask(np.eye(len(corr), dtype=bool)).abs() > 0.95).any() # 0.95 / 0.99
-features_corr
+    # get loss for the predicted output
+    loss = criterion(outputs, labels)
+    print(loss)
+    # get gradients w.r.t to parameters
+    loss.backward()
 
-X_good = corr.loc[features_corr, features_corr]
-lst_variable_corr = X_good.columns.values.tolist()
-X_corr = X[np.intersect1d(X.columns, lst_variable_corr)]
+    # update parameters
+    optimizer.step()
 
-df_corr = X[X_corr.columns]
-df_corr
+    print('epoch {}, loss {}'.format(epoch, loss.item()))
 
-pca = PCA(n_components=12, svd_solver='full')
-pca.fit(X)
+with torch.no_grad(): # we don't need gradients in the testing phase
+    if torch.cuda.is_available():
+        predicted = model(Variable(torch.from_numpy(x_train).cuda())).cpu().data.numpy()
+    else:
+        predicted = model(Variable(torch.from_numpy(x_train))).data.numpy()
+    print(predicted)
 
-
-# In[ ]:
-
-
-T = pca.transform(X)
-T.shape
-pca.explained_variance_ratio_
-
-components = pd.DataFrame(pca.components_, columns = X.columns, index=[1,2,3,4,5,6,7,8,9,10,11,12])
-components
-
-pca_result = get_important_features(T, pca.components_, X.columns.values)
-pca_result = pd.DataFrame(pca_result,columns=['PCA_Value','Variable'])
-threshold = 3
-pca_result = pca_result[pca_result["PCA_Value"] >= 3]
-pca_result
-
-X_pca = pca_result['Variable']
-df_pca = X[X_pca]
-
-df_pca
-
-y = databank.fluid
-X = df_pca # df_corr
-
-model = Sequential()
-model.add(Dense(units=10, activation='relu'))
-model.add(Dense(units=10, activation='softmax'))
-
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
-
-model.summary()
-history = model.fit(X, y, epochs=10, batch_size=10, validation_split=0.2)
-
-
-
+plt.clf()
+plt.plot(x_train, y_train, 'go', label='True data', alpha=0.5)
+plt.plot(x_train, predicted, '--', label='Predictions', alpha=0.5)
+plt.legend(loc='best')
+plt.show()

@@ -45,7 +45,6 @@ for g in range(3):
             fluidProp = tableNist[0]
             print(len(fluidProp))
 
-            ## Sprawdziłem i tak też działa xD
             fluidProp['Fluid'] = fluidName
 
             # Remove unnecessary columns
