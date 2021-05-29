@@ -1,4 +1,5 @@
 # Default ignored files
 /shelf/
 *.csv
+chem_estyPy/.ipynb_checkpoints
 /workspace.xml
