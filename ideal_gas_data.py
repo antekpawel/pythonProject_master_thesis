@@ -46,8 +46,8 @@ try:
     with open('Ideal_gas_data.xlsx', encoding='utf-8', errors='ignore') as f:
         ideal_gas_data = pd.read_excel("Ideal_gas_data.xlsx", index_col=0)
 except IOError:
-    pressure = np.random.rand(300) * 9.9 + 0.1
-    temperature = np.random.rand(300) * 200 + 273.15
+    pressure = np.random.rand(100) * 9.9 + 0.1
+    temperature = np.random.rand(100) * 200 + 273.15
     density = pressure * 1e6 / temperature / 8.314 * 1 / 1000
 
     w_p = (pressure - 0.1) / 9.9
@@ -89,16 +89,12 @@ normed_test_data = normed_test_data.values
 normed_train_data = normed_train_data.values
 
 model = build_model()
-history = model.fit(normed_train_data, train_labels.values, epochs=150, validation_split=0.2, verbose=1, batch_size=32)
+history = model.fit(normed_train_data, train_labels.values, epochs=400, validation_split=0.2, verbose=1, batch_size=32)
 plot_hist(history)
 
 test_predictions = model.predict(normed_test_data).flatten()
-pred = pd.DataFrame(test_labels)
-pred['predictions'] = test_predictions
-print(pred.head())
-
-test_labels = pd.DataFrame(test_labels)
-data_compare = test_labels.reset_index().drop('index', 1)
+data_compare = pd.DataFrame(test_labels)
 data_compare['Predicted density [kg/m3]'] = test_predictions
+data_compare = data_compare.reset_index().drop('index', 1)
 print(data_compare)
 data_compare.to_excel('Data_compare.xlsx')
