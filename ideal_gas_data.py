@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import EarlyStopping
 
 
 def norm(x):
@@ -12,12 +14,12 @@ def norm(x):
 
 def build_model():
     model = Sequential()
-    model.add(Dense(4))
+    model.add(Dense(4, input_shape=(2,)))
     model.add(Dense(1, activation='relu'))
 
-    model.compile(optimizer='adam',
+    model.compile(optimizer='SGD',
                   loss='mse',
-                  metrics=['mae', 'mse'])
+                  metrics=['mse'])
     return model
 
 
@@ -26,13 +28,6 @@ def plot_hist(history):
     hist['epoch'] = history.epoch
     hist['rmse'] = np.sqrt(hist['mse'])
     hist['val_rmse'] = np.sqrt(hist['val_mse'])
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['mae'], name='mae', mode='markers+lines'))
-    fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['val_mae'], name='val_mae', mode='markers+lines'))
-    fig.update_layout(width=1000, height=500, title='MAE vs. VAL_MAE', xaxis_title='Epoki',
-                      yaxis_title='Mean Absolute Error', yaxis_type='log')
-    fig.show()
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['rmse'], name='rmse', mode='markers+lines'))
@@ -69,7 +64,7 @@ except IOError:
 dataset = ideal_gas_data.copy()
 
 fig = px.scatter_matrix(dataset, dimensions=['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]'], height=700)
-# fig.show()
+fig.show()
 
 dataset = dataset[['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]']]
 train_dataset = dataset.sample(frac=0.7, random_state=0)
@@ -88,13 +83,26 @@ normed_test_data = norm(test_dataset)
 normed_test_data = normed_test_data.values
 normed_train_data = normed_train_data.values
 
+filepath = 'Best_weights.hdf5'
+checkpoint = ModelCheckpoint(filepath=filepath, monitor='mse', verbose=0, save_best_only=True, mode='min')
+es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=3)
+
 model = build_model()
-history = model.fit(normed_train_data, train_labels.values, epochs=400, validation_split=0.2, verbose=1, batch_size=32)
+history = model.fit(normed_train_data, train_labels.values,
+                    epochs=500,
+                    validation_split=0.2,
+                    verbose=0,
+                    batch_size=32,
+                    callbacks=[checkpoint, es])
 plot_hist(history)
 
 test_predictions = model.predict(normed_test_data).flatten()
 data_compare = pd.DataFrame(test_labels)
 data_compare['Predicted density [kg/m3]'] = test_predictions
-data_compare = data_compare.reset_index().drop('index', 1)
+data_compare = data_compare.reset_index(drop=True)
+
 print(data_compare)
 data_compare.to_excel('Data_compare.xlsx')
+hist = pd.DataFrame(history.history)
+hist['rmse'] = np.sqrt(hist['mse'])
+print(hist['rmse'])
