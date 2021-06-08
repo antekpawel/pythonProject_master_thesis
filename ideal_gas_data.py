@@ -64,8 +64,8 @@ def get_ideal_gas_data():
             print('err')
 
     ideal_gas_data_f = pd.DataFrame(list(zip(pressure, temperature, density, w_p, w_t, w_d)),
-                                  columns=['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]',
-                                           'W_p [-]', 'W_t [-]', 'W_d [-]'])
+                                    columns=['Pressure [MPa]', 'Temperature [K]',
+                                             'Density [kg/m3]', 'W_p [-]', 'W_t [-]', 'W_d [-]'])
 
     ideal_gas_data_f.to_excel('Ideal_gas_data.xlsx')
     return ideal_gas_data_f
@@ -111,19 +111,16 @@ history = model.fit(normed_train_data, train_labels.values,
                     verbose=0,
                     batch_size=32,
                     callbacks=[checkpoint, es])
+print(model.summary())
 plot_hist(history)
 
 test_predictions = model.predict(normed_test_data).flatten()
 data_compare = pd.DataFrame(test_labels)
 data_compare['Predicted density [kg/m3]'] = test_predictions
 data_compare = data_compare.reset_index(drop=True)
-
-print(data_compare.head())
-data_compare.to_excel('Data_compare.xlsx')
-
 table_ptro = dataset.head()
-print(table_ptro)
-table_ptro.to_excel('Head.xlsx')
 
-print(model.layers[0].get_weights()[0])
-print(model.layers[0].get_weights()[1])
+with pd.ExcelWriter('Properties.xlsx') as writer:
+    data_compare.to_excel(writer, sheet_name='Data_compare')
+    table_ptro.to_excel(writer, sheet_name='Head')
+    pd.DataFrame(model.get_weights()).to_excel(writer, sheet_name='Weights')
