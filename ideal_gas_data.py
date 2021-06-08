@@ -14,7 +14,7 @@ def norm(x):
 
 def build_model():
     model = Sequential()
-    model.add(Dense(4, input_shape=(2,)))
+    model.add(Dense(4, input_dim=2))
     model.add(Dense(1, activation='relu'))
 
     model.compile(optimizer='SGD',
@@ -37,10 +37,13 @@ def plot_hist(history):
     fig.show()
 
 
-try:
-    with open('Ideal_gas_data.xlsx', encoding='utf-8', errors='ignore') as f:
-        ideal_gas_data = pd.read_excel("Ideal_gas_data.xlsx", index_col=0)
-except IOError:
+def get_rmse(history):
+    hist = pd.DataFrame(history.history)
+    hist['rmse'] = np.sqrt(hist['mse'])
+    print(hist['rmse'])
+
+
+def get_ideal_gas_data():
     pressure = np.random.rand(100) * 9.9 + 0.1
     temperature = np.random.rand(100) * 200 + 273.15
     density = pressure * 1e6 / temperature / 8.314 * 1 / 1000
@@ -55,15 +58,23 @@ except IOError:
         if i > 1 or i < 0:
             print('err')
 
-    ideal_gas_data = pd.DataFrame(list(zip(pressure, temperature, density, w_p, w_t, w_d)),
+    ideal_gas_data_f = pd.DataFrame(list(zip(pressure, temperature, density, w_p, w_t, w_d)),
                                   columns=['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]',
                                            'W_p [-]', 'W_t [-]', 'W_d [-]'])
 
-    ideal_gas_data.to_excel('Ideal_gas_data.xlsx')
+    ideal_gas_data_f.to_excel('Ideal_gas_data.xlsx')
+    return ideal_gas_data_f
+
+
+try:
+    with open('Ideal_gas_data.xlsx', encoding='utf-8', errors='ignore') as f:
+        ideal_gas_data = pd.read_excel("Ideal_gas_data.xlsx", index_col=0)
+except IOError:
+    ideal_gas_data = get_ideal_gas_data()
 
 dataset = ideal_gas_data.copy()
 
-fig = px.scatter_matrix(dataset, dimensions=['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]'], height=700)
+fig = px.scatter_matrix(dataset, dimensions=['Pressure [MPa]', 'Temperature [K]'], height=700)
 fig.show()
 
 dataset = dataset[['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]']]
@@ -103,6 +114,10 @@ data_compare = data_compare.reset_index(drop=True)
 
 print(data_compare)
 data_compare.to_excel('Data_compare.xlsx')
-hist = pd.DataFrame(history.history)
-hist['rmse'] = np.sqrt(hist['mse'])
-print(hist['rmse'])
+
+table_ptro = dataset.head()
+print(table_ptro)
+table_ptro.to_excel('Head.xlsx')
+
+print(model.layers[0].get_weights()[0])
+print(model.layers[0].get_weights()[1])
