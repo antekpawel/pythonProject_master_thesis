@@ -4,8 +4,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+import os
+
+if not os.path.exists("images"):
+    os.mkdir("images")
 
 
 def norm(x):
@@ -35,6 +38,7 @@ def plot_hist(history):
     fig.update_layout(width=1000, height=500, title='RMSE vs. VAL_RMSE', xaxis_title='Epoki',
                       yaxis_title='Root Mean Squared Error', yaxis_type='log')
     fig.show()
+    fig.write_image("images/RMSE_chart.svg")
 
 
 def get_rmse(history):
@@ -44,6 +48,7 @@ def get_rmse(history):
 
 
 def get_ideal_gas_data():
+    np.random.seed(1)
     pressure = np.random.rand(100) * 9.9 + 0.1
     temperature = np.random.rand(100) * 200 + 273.15
     density = pressure * 1e6 / temperature / 8.314 * 1 / 1000
@@ -76,6 +81,7 @@ dataset = ideal_gas_data.copy()
 
 fig = px.scatter_matrix(dataset, dimensions=['Pressure [MPa]', 'Temperature [K]'], height=700)
 fig.show()
+fig.write_image("images/Relation_chart.svg")
 
 dataset = dataset[['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]']]
 train_dataset = dataset.sample(frac=0.7, random_state=0)
@@ -112,7 +118,7 @@ data_compare = pd.DataFrame(test_labels)
 data_compare['Predicted density [kg/m3]'] = test_predictions
 data_compare = data_compare.reset_index(drop=True)
 
-print(data_compare)
+print(data_compare.head())
 data_compare.to_excel('Data_compare.xlsx')
 
 table_ptro = dataset.head()
