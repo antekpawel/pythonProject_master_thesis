@@ -1,11 +1,25 @@
-import numpy as np# create dummy data for training
+import numpy as np
+import plotly.express as px
 
+x_range = np.arange(-5, 5, 0.1)
 
-pressure = np.random.rand(3) * 9.9 + 0.1
-temperature = np.random.rand(3) * 200 + 273.15
-density = pressure * 1e6 / temperature / 8.314 * 1 / 1000
+y_lin = x_range
+fig_lin = px.line(x=x_range, y=y_lin, title='Linear')
+fig_lin.show()
+fig_lin.write_image("images/AF_lin.svg")
 
-print(pressure.T)
-x_train = np.concatenate((pressure, temperature), axis=1)
-#x_train = x_train.reshape(-1, 1)
-print(x_train)
+y_tanh = np.tanh(x_range)
+fig_tanh = px.line(x=x_range, y=y_tanh, title='tanh')
+fig_tanh.show()
+fig_tanh.write_image("images/AF_tanh.svg")
+
+y_exp = np.exp(x_range)
+fig_exp = px.line(x=x_range, y=y_exp, title='Exponential')
+fig_exp.show()
+fig_exp.write_image("images/AF_exp.svg")
+
+y_relu = x_range.copy()
+y_relu[y_relu < 0] = 0
+fig_relu = px.line(x=x_range, y=y_relu, title='ReLU')
+fig_relu.show()
+fig_relu.write_image("images/AF_relu.svg")
