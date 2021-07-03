@@ -6,6 +6,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 import os
+import re
+from sklearn.metrics import r2_score
 
 if not os.path.exists("images"):
     os.mkdir("images")
@@ -35,7 +37,7 @@ def plot_hist(history):
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['rmse'], name='rmse', mode='markers+lines'))
     fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['val_rmse'], name='val_rmse', mode='markers+lines'))
-    fig.update_layout(width=1000, height=500, title='RMSE vs. VAL_RMSE', xaxis_title='Epoki',
+    fig.update_layout(width=1000, height=500, title='RMSE vs. VAL_RMSE', xaxis_title='Epoch',
                       yaxis_title='Root Mean Squared Error', yaxis_type='log')
     fig.show()
     fig.write_image("images/RMSE_chart.svg")
@@ -44,7 +46,7 @@ def plot_hist(history):
 def get_rmse(history):
     hist = pd.DataFrame(history.history)
     hist['rmse'] = np.sqrt(hist['mse'])
-    print(hist['rmse'])
+    return hist['rmse']
 
 
 def get_ideal_gas_data():
@@ -71,6 +73,14 @@ def get_ideal_gas_data():
     return ideal_gas_data_f
 
 
+def save_figure(vector, name):
+    fig_err_abs = go.Figure()
+    fig_err_abs.add_trace(go.Scatter(y=vector, mode='markers'))
+    fig_err_abs.update_layout(xaxis_title='No.', yaxis_title=name)
+    fig_err_abs.show()
+    fig_err_abs.write_image("images/{0}.svg".format(re.sub('\W+', '', name)))
+
+
 try:
     with open('Ideal_gas_data.xlsx', encoding='utf-8', errors='ignore') as f:
         ideal_gas_data = pd.read_excel("Ideal_gas_data.xlsx", index_col=0)
@@ -80,8 +90,8 @@ except IOError:
 dataset = ideal_gas_data.copy()
 
 fig = px.scatter_matrix(dataset, dimensions=['Pressure [MPa]', 'Temperature [K]'], height=700)
-fig.show()
-fig.write_image("images/Relation_chart.svg")
+'''fig.show()
+fig.write_image("images/Relation_chart.svg")'''
 
 dataset = dataset[['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]']]
 train_dataset = dataset.sample(frac=0.7, random_state=0)
@@ -102,7 +112,7 @@ normed_train_data = normed_train_data.values
 
 filepath = 'Best_weights.hdf5'
 checkpoint = ModelCheckpoint(filepath=filepath, monitor='mse', verbose=0, save_best_only=True, mode='min')
-es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=3)
+es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=8)
 
 model = build_model()
 history = model.fit(normed_train_data, train_labels.values,
@@ -111,16 +121,27 @@ history = model.fit(normed_train_data, train_labels.values,
                     verbose=0,
                     batch_size=32,
                     callbacks=[checkpoint, es])
+# plot_hist(history)
 print(model.summary())
-plot_hist(history)
 
 test_predictions = model.predict(normed_test_data).flatten()
 data_compare = pd.DataFrame(test_labels)
 data_compare['Predicted density [kg/m3]'] = test_predictions
+data_compare['Error [kg/m3]'] = abs(test_labels - test_predictions)
+data_compare['Error [%]'] = data_compare['Error [kg/m3]'] / test_labels
 data_compare = data_compare.reset_index(drop=True)
-table_ptro = dataset.head()
+data_compare = data_compare.sort_values(by="Density [kg/m3]", ignore_index=True)
+
+save_figure(data_compare['Error [%]'], 'Error [%]')
+save_figure(data_compare['Error [kg/m3]'], 'Error [kg/m^3]')
+
+rmse = get_rmse(history)
+r2 = pd.DataFrame({'r2': [r2_score(test_labels, test_predictions)]})
 
 with pd.ExcelWriter('Properties.xlsx') as writer:
     data_compare.to_excel(writer, sheet_name='Data_compare')
-    table_ptro.to_excel(writer, sheet_name='Head')
+    dataset.head().to_excel(writer, sheet_name='Head')
     pd.DataFrame(model.get_weights()).to_excel(writer, sheet_name='Weights')
+    pd.DataFrame(rmse).to_excel(writer, sheet_name='RMSE')
+    r2.to_excel(writer, sheet_name='r2')
+print(r2)
