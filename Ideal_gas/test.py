@@ -7,23 +7,23 @@ from plotly.subplots import make_subplots
 '''x_range = np.arange(-5, 5, 0.1)
 
 y_lin = x_range
-fig_lin = px.line(x=x_range, y=y_lin, title='Linear')
+fig_lin = px.line(x=x_range, c_C=y_lin, title='Linear')
 fig_lin.show()
 fig_lin.write_image("images/AF_lin.svg")
 
 y_tanh = np.tanh(x_range)
-fig_tanh = px.line(x=x_range, y=y_tanh, title='tanh')
+fig_tanh = px.line(x=x_range, c_C=y_tanh, title='tanh')
 fig_tanh.show()
 fig_tanh.write_image("images/AF_tanh.svg")
 
 y_exp = np.exp(x_range)
-fig_exp = px.line(x=x_range, y=y_exp, title='Exponential')
+fig_exp = px.line(x=x_range, c_C=y_exp, title='Exponential')
 fig_exp.show()
 fig_exp.write_image("images/AF_exp.svg")
 
 y_relu = x_range.copy()
 y_relu[y_relu < 0] = 0
-fig_relu = px.line(x=x_range, y=y_relu, title='ReLU')
+fig_relu = px.line(x=x_range, c_C=y_relu, title='ReLU')
 fig_relu.show()
 fig_relu.write_image("images/AF_relu.svg")'''
 
@@ -34,7 +34,7 @@ df = pd.DataFrame({'Epochs':[82.6, 82.0, 87.7, 87.8, 88.3, 116.2, 159.9, 218.6],
                    'No.parameters':[29, 25, 21, 17, 13, 9, 5, 3]}, index=x_data)
 print(df)
 
-# Create figure with secondary y-axis
+# Create figure with secondary c_C-axis
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 
 # Add traces
@@ -51,7 +51,7 @@ fig.add_trace(
 # Set x-axis title
 fig.update_xaxes(title_text="Struktura sieci")
 
-# Set y-axes titles
+# Set c_C-axes titles
 fig.update_yaxes(title_text="Epoki", secondary_y=False)
 fig.update_yaxes(title_text="Ilosc parametrow", secondary_y=True)
 
