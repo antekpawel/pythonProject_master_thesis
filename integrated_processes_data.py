@@ -42,6 +42,12 @@ except IOError:
     print("No file!")
 
 dataset = pd.DataFrame()
+stop_condition = data_IP.copy()
+stop_condition['Stezenie row [mol/m3]'] = 0
+stop_condition['Stezenie row [mol/m3]'] = stop_condition['Stezenie row [mol/m3]'].astype(float)
+stop_condition['Time to stop [s]'] = 0
+stop_condition['Equilibrium'] = 0
+stop_condition['Equilibrium'] = stop_condition['Equilibrium'].astype(float)
 plot = False
 
 for index, row in data_IP.iterrows():
@@ -53,6 +59,7 @@ for index, row in data_IP.iterrows():
     k2 = reaction_rate(Temperature)
     Ke = equilibrium(Temperature)
 
+    # Information
     sqrt_val = pierwiastek(c_A0, c_B0, Ke)
     eq_concetration = stezenie_row(c_A0, c_B0, Temperature)
     print(eq_concetration)
@@ -88,11 +95,16 @@ for index, row in data_IP.iterrows():
                                      + '.svg')
 
     # Check the value
-    print(c_C[-1] ** 2 / (c_A0 - c_C[-1]) / (c_B0 - c_C[-1]) / equilibrium(Temperature))
+    check_eq = c_C[-1] ** 2 / (c_A0 - c_C[-1]) / (c_B0 - c_C[-1]) / equilibrium(Temperature)
 
     # Save data
     dataset = pd.concat([dataset, con_in_time], ignore_index=True)
+    stop_condition['Stezenie row [mol/m3]'][i] = eq_concetration.astype(float)
+    stop_condition['Time to stop [s]'][i] = finish_time
+    stop_condition['Equilibrium'][i] = check_eq
 
 print(dataset)
+print(stop_condition)
 with pd.ExcelWriter('Concetration_data.xlsx') as writer:
     dataset.to_excel(writer, sheet_name='Concetration_data')
+    stop_condition.to_excel(writer, sheet_name='Stop_condition')
