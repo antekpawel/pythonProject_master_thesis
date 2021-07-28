@@ -19,10 +19,13 @@ def norm(x):
 
 def build_model():
     model = Sequential()
-    model.add(Dense(3, activation='sigmoid', input_dim=4))
-    model.add(Dense(3, activation='sigmoid'))
-    model.add(Dense(3, activation='relu'))
-    model.add(Dense(1))
+    model.add(Dense(5, activation='relu', input_dim=4))
+    model.add(Dense(4, activation='relu'))
+    model.add(Dense(5, activation='sigmoid'))
+    model.add(Dense(4, activation='sigmoid'))
+    model.add(Dense(5, activation='sigmoid'))
+    model.add(Dense(4, activation='sigmoid'))
+    model.add(Dense(1, activation='relu'))
 
     model.compile(optimizer='adam',
                   loss='mse',
@@ -92,27 +95,27 @@ normed_train_data = normed_train_data.values
 
 filepath = 'Best_weights.hdf5'
 checkpoint = ModelCheckpoint(filepath=filepath, monitor='mse', verbose=0, save_best_only=True, mode='min')
-es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=15)
+es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=50)
 
 model = build_model()
 history = model.fit(normed_train_data, train_labels.values,
-                    epochs=1000,
+                    epochs=5000,
                     validation_split=0.2,
-                    verbose=1,
+                    verbose=0,
                     batch_size=32,
                     callbacks=[es, checkpoint])
-plot_hist(history)
+# plot_hist(history)
 print(model.summary())
 
 test_predictions = model.predict(normed_test_data).flatten()
 data_compare = pd.DataFrame(test_labels)
 data_compare['Predicted r [mol/m3/s]'] = test_predictions
 data_compare['Error [mol/m3/s]'] = abs(test_labels - test_predictions)
-data_compare['Error [%]'] = data_compare['Error [mol/m3/s]'] / test_labels
+data_compare['Error [%]'] = data_compare['Error [mol/m3/s]'] / test_labels * 100
 data_compare = data_compare.reset_index(drop=True)
 data_compare = data_compare.sort_values(by="r [mol/m3/s]", ignore_index=True)
 
-save_figure(data_compare['Error [%]'], 'Error [%]')
+# save_figure(data_compare['Error [%]'], 'Error [%]')
 # save_figure(data_compare['Error [mol/m3/s]'], 'Error [mol/m3/s]')
 
 rmse = get_rmse(history)
@@ -125,3 +128,8 @@ with pd.ExcelWriter('Properties.xlsx') as writer:
     pd.DataFrame(rmse).to_excel(writer, sheet_name='RMSE')
     r2.to_excel(writer, sheet_name='r2')
 print(r2)
+print(sum(data_compare['Error [%]'] < 1) / len(data_compare))
+print(sum(data_compare['Error [%]'] < 10) / len(data_compare))
+print(sum(data_compare['Error [%]'] < 50) / len(data_compare))
+print(sum(data_compare['Error [%]'] < 100) / len(data_compare))
+print(sum(data_compare['Error [%]'] == 100) / len(data_compare))
