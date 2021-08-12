@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import tensorflow
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
@@ -18,6 +19,7 @@ def norm(x):
 
 
 def build_model():
+    tensorflow.random.set_seed(0)
     model = Sequential()
     model.add(Dense(5, activation='relu', input_dim=4))
     model.add(Dense(4, activation='relu'))

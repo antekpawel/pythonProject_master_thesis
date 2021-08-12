@@ -89,9 +89,9 @@ except IOError:
 
 dataset = ideal_gas_data.copy()
 
-fig = px.scatter_matrix(dataset, dimensions=['Pressure [MPa]', 'Temperature [K]'], height=700)
-'''fig.show()
-fig.write_image("images/Relation_chart.svg")'''
+fig = px.scatter_matrix(dataset, dimensions=['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]'], height=700)
+fig.show()
+fig.write_image("images/Relation_chart.svg")
 
 dataset = dataset[['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]']]
 train_dataset = dataset.sample(frac=0.7, random_state=0)
