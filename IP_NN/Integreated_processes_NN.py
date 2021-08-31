@@ -19,10 +19,9 @@ def norm(x):
 
 
 def build_model():
-    tensorflow.random.set_seed(0)
+    tensorflow.random.set_seed(1)
     model = Sequential()
-    model.add(Dense(9, activation='sigmoid', input_dim=4))
-    # model.add(Dense(4, activation='si0gmoid'))
+    model.add(Dense(11, activation='sigmoid', input_dim=5))
     model.add(Dense(1, activation='sigmoid'))
 
     model.compile(optimizer='adam',

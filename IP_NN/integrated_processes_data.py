@@ -75,18 +75,19 @@ for index, row in data_IP.iterrows():
     c_C = odeint(r_reaction_cd, 0, reaction_time, args=(c_A0, c_B0, Ke, k2))
 
     # Table of output data
-    con_in_time = pd.DataFrame(list(zip(np.hstack(c_C))), columns=['c_C = c_D [mol/m3]'])
-    con_in_time['c_A [mol/m3]'] = c_A0 - con_in_time['c_C = c_D [mol/m3]']
-    con_in_time['c_B [mol/m3]'] = c_B0 - con_in_time['c_C = c_D [mol/m3]']
+    con_in_time = pd.DataFrame(list(zip(np.hstack(c_C))), columns=['c_C [mol/m3]'])
+    con_in_time['c_D [mol/m3]'] = con_in_time['c_C [mol/m3]']
+    con_in_time['c_A [mol/m3]'] = c_A0 - con_in_time['c_C [mol/m3]']
+    con_in_time['c_B [mol/m3]'] = c_B0 - con_in_time['c_C [mol/m3]']
     con_in_time['Reaction temperature [C]'] = Temperature
     con_in_time['r [mol/m3/s]'] = k2 * (con_in_time['c_A [mol/m3]'] * con_in_time['c_B [mol/m3]']
-                                        - con_in_time['c_C = c_D [mol/m3]'] ** 2 / Ke)
+                                        - con_in_time['c_C [mol/m3]'] ** 2 / Ke)
 
     # Plot data
     if plot:
         fig_concetration = px.line(con_in_time,
                                    x='Czas [s]',
-                                   y=['c_B [mol/m3]', 'c_A [mol/m3]', 'c_C = c_D [mol/m3]'],
+                                   y=['c_B [mol/m3]', 'c_A [mol/m3]', 'c_C [mol/m3]'],
                                    labels=dict(x="Czas [s]", y="Stezenie [mol/m3]", color="Skladniki"))
         fig_concetration.show()
         fig_concetration.write_image('images/Concetration Tr ' + str(data_IP['T_r [C]'][i])
