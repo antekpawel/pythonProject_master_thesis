@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import tensorflow
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 import os
 import re
@@ -19,11 +19,11 @@ def norm(x):
 
 
 def build_model():
-    tensorflow.random.set_seed(1)
+    tensorflow.random.set_seed(0)
     model = Sequential()
-    model.add(Dense(5, activation='relu', input_dim=4))
-    model.add(Dense(4, activation='relu'))
-    model.add(Dense(1, activation='relu'))
+    model.add(Dense(9, activation='sigmoid', input_dim=4))
+    # model.add(Dense(4, activation='si0gmoid'))
+    model.add(Dense(1, activation='sigmoid'))
 
     model.compile(optimizer='adam',
                   loss='mse',
@@ -68,12 +68,12 @@ except IOError:
 
 dataset = ideal_gas_data.copy()
 
-fig = px.scatter_matrix(dataset,
-                        dimensions=['c_C = c_D [mol/m3]', 'c_A [mol/m3]', 'c_B [mol/m3]',
-                                    'Reaction temperature [C]', 'r [mol/m3/s]'],
-                        height=700)
-fig.show()
-fig.write_image("images/Relation_chart.svg")
+# fig = px.scatter_matrix(dataset,
+#                         dimensions=['c_C = c_D [mol/m3]', 'c_A [mol/m3]', 'c_B [mol/m3]',
+#                                     'Reaction temperature [C]', 'r [mol/m3/s]'],
+#                         height=700)
+# fig.show()
+# fig.write_image("images/Relation_chart.svg")
 
 # dataset = dataset[['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]']]
 train_dataset = dataset.sample(frac=0.7, random_state=0)
