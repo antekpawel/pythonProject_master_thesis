@@ -76,7 +76,6 @@ for index, row in data_IP.iterrows():
 
     # Table of output data
     con_in_time = pd.DataFrame(list(zip(np.hstack(c_C))), columns=['c_C [mol/m3]'])
-    con_in_time['c_D [mol/m3]'] = con_in_time['c_C [mol/m3]']
     con_in_time['c_A [mol/m3]'] = c_A0 - con_in_time['c_C [mol/m3]']
     con_in_time['c_B [mol/m3]'] = c_B0 - con_in_time['c_C [mol/m3]']
     con_in_time['Reaction temperature [C]'] = Temperature
