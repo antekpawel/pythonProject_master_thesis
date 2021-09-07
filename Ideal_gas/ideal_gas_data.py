@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import tensorflow
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
@@ -18,11 +19,12 @@ def norm(x):
 
 
 def build_model():
+    tensorflow.random.set_seed(0)
     model = Sequential()
-    model.add(Dense(4, input_dim=2))
+    model.add(Dense(5, input_dim=2))
     model.add(Dense(1, activation='relu'))
 
-    model.compile(optimizer='SGD',
+    model.compile(optimizer='adam',
                   loss='mse',
                   metrics=['mse'])
     return model
@@ -51,7 +53,7 @@ def get_rmse(history):
 
 def get_ideal_gas_data():
     np.random.seed(1)
-    pressure = np.random.rand(100) * 9.9 + 0.1
+    pressure = np.random.rand(100) * 0.1 + 0.1
     temperature = np.random.rand(100) * 200 + 273.15
     density = pressure * 1e6 / temperature / 8.314 * 1 / 1000
 
@@ -106,17 +108,19 @@ test_labels = test_dataset.pop('Density [kg/m3]')
 
 normed_train_data = norm(train_dataset)
 normed_test_data = norm(test_dataset)
+print(normed_test_data)
+print(normed_train_data)
 
 normed_test_data = normed_test_data.values
 normed_train_data = normed_train_data.values
 
 filepath = 'Best_weights.hdf5'
 checkpoint = ModelCheckpoint(filepath=filepath, monitor='mse', verbose=0, save_best_only=True, mode='min')
-es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=8)
+es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=50)
 
 model = build_model()
 history = model.fit(normed_train_data, train_labels.values,
-                    epochs=500,
+                    epochs=50000,
                     validation_split=0.2,
                     verbose=0,
                     batch_size=32,
