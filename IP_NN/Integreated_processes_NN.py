@@ -21,12 +21,17 @@ def norm(x):
 def build_model():
     tensorflow.random.set_seed(2)
     model = Sequential()
-    # model.add(Dense(5, activation='sigmoid', input_dim=4))
+    model.add(Dense(9, activation='sigmoid', input_dim=4))
+    # model.add(Dense(9, activation='sigmoid'))
+    # model.add(Dense(9, activation='sigmoid'))
+    # model.add(Dense(9, activation='sigmoid'))
+    # model.add(Dense(9, activation='sigmoid'))
+    # model.add(Dense(9, activation='sigmoid'))
     model.add(Dense(1, activation='sigmoid'))
 
     model.compile(optimizer='adam',
-                  loss='mse',
-                  metrics=['mse'])
+                  loss='mape',
+                  metrics=['mse', 'mape'])
     return model
 
 
@@ -37,8 +42,8 @@ def plot_hist(history):
     hist['val_rmse'] = np.sqrt(hist['val_mse'])
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['rmse'], name='Zbior uczacy', mode='markers+lines'))
-    fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['val_rmse'], name='Zbior walidacyjny', mode='markers+lines'))
+    fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['mape'], name='Zbior uczacy', mode='markers+lines'))
+    fig.add_trace(go.Scatter(x=hist['epoch'], y=hist['val_mape'], name='Zbior walidacyjny', mode='markers+lines'))
     fig.update_layout(width=1000, height=500, xaxis_title='Epoki',
                       yaxis_title='Blad sredniokwadratowy', yaxis_type='log')
     fig.show()
@@ -67,12 +72,12 @@ except IOError:
 
 dataset = ideal_gas_data.copy()
 
-fig = px.scatter_matrix(dataset,
-                        dimensions=['c_C [mol/m3]', 'c_A [mol/m3]', 'c_B [mol/m3]',
-                                    'Reaction temperature [C]', 'r [mol/m3/s]'],
-                        height=900, width=900)
-fig.show()
-fig.write_image("images/Relation_chart.svg")
+# fig = px.scatter_matrix(dataset,
+#                         dimensions=['c_C [mol/m3]', 'c_A [mol/m3]', 'c_B [mol/m3]',
+#                                     'Reaction temperature [C]', 'r [mol/m3/s]'],
+#                         height=900, width=900)
+# fig.show()
+# fig.write_image("images/Relation_chart.svg")
 
 # dataset = dataset[['Pressure [MPa]', 'Temperature [K]', 'Density [kg/m3]']]
 train_dataset = dataset.sample(frac=0.7, random_state=0)
@@ -93,16 +98,16 @@ normed_train_data = normed_train_data.values
 
 filepath = 'Best_weights.hdf5'
 checkpoint = ModelCheckpoint(filepath=filepath, monitor='mse', verbose=0, save_best_only=True, mode='min')
-es = EarlyStopping(monitor='mse', mode='min', verbose=1, patience=25)
+es = EarlyStopping(monitor='mape', mode='min', verbose=1, patience=2000)
 
 model = build_model()
 history = model.fit(normed_train_data, train_labels.values,
-                    epochs=20000,
+                    epochs=50000,
                     validation_split=0.2,
-                    verbose=0,
+                    verbose=1,
                     batch_size=32,
                     callbacks=[es, checkpoint])
-# plot_hist(history)
+plot_hist(history)
 print(model.summary())
 
 test_predictions = model.predict(normed_test_data).flatten()
@@ -113,8 +118,8 @@ data_compare['Error [%]'] = data_compare['Error [mol/m3/s]'] / test_labels * 100
 data_compare = data_compare.reset_index(drop=True)
 data_compare = data_compare.sort_values(by="r [mol/m3/s]", ignore_index=True)
 
-# save_figure(data_compare['Error [%]'], 'Blad [%]')
-# save_figure(data_compare['Error [mol/m3/s]'], 'Blad [mol/m3/s]')
+save_figure(data_compare['Error [%]'], 'Blad [%]')
+save_figure(data_compare['Error [mol/m3/s]'], 'Blad [mol/m3/s]')
 
 rmse = get_rmse(history)
 r2 = pd.DataFrame({'r2': [r2_score(test_labels, test_predictions)]})
@@ -128,5 +133,5 @@ with pd.ExcelWriter('Properties.xlsx') as writer:
 print(r2)
 print(sum(data_compare['Error [%]'] < 1) / len(data_compare))
 print(sum(data_compare['Error [%]'] < 10) / len(data_compare))
+print(sum(data_compare['Error [%]'] < 20) / len(data_compare))
 print(sum(data_compare['Error [%]'] < 50) / len(data_compare))
-print(sum(data_compare['Error [%]'] < 100) / len(data_compare))
