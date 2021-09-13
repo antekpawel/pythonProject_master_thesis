@@ -19,13 +19,13 @@ def norm(x):
 
 
 def build_model():
-    tensorflow.random.set_seed(2)
+    tensorflow.random.set_seed(0)
     model = Sequential()
     model.add(Dense(9, activation='sigmoid', input_dim=4))
-    # model.add(Dense(9, activation='sigmoid'))
-    # model.add(Dense(9, activation='sigmoid'))
-    # model.add(Dense(9, activation='sigmoid'))
-    # model.add(Dense(9, activation='sigmoid'))
+    model.add(Dense(9, activation='sigmoid'))
+    model.add(Dense(9, activation='sigmoid'))
+    model.add(Dense(9, activation='sigmoid'))
+    model.add(Dense(9, activation='sigmoid'))
     # model.add(Dense(9, activation='sigmoid'))
     model.add(Dense(1, activation='sigmoid'))
 
@@ -98,7 +98,7 @@ normed_train_data = normed_train_data.values
 
 filepath = 'Best_weights.hdf5'
 checkpoint = ModelCheckpoint(filepath=filepath, monitor='mse', verbose=0, save_best_only=True, mode='min')
-es = EarlyStopping(monitor='mape', mode='min', verbose=1, patience=2000)
+es = EarlyStopping(monitor='mape', mode='min', verbose=1, patience=1000)
 
 model = build_model()
 history = model.fit(normed_train_data, train_labels.values,
